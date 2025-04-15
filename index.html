@@ -74,6 +74,7 @@
     <select id="type">
       <option value="qrcode">QR-код</option>
       <option value="ean13">Штрихкод (EAN-13)</option>
+      <option value="code128">Штрихкод (Code 128, до 14 символов)</option>
       <option value="datamatrix">DataMatrix</option>
     </select>
 
@@ -115,6 +116,9 @@
         });
       } else if (type === 'ean13') {
         try {
+          if (!/^[0-9]{12,13}$/.test(text)) {
+            throw new Error();
+          }
           JsBarcode(canvas, text, {
             format: "EAN13",
             width: 2,
@@ -124,6 +128,22 @@
           downloadBtn.style.display = 'block';
         } catch (e) {
           alert('Для EAN-13 требуется 12 или 13 цифр.');
+        }
+      } else if (type === 'code128') {
+        try {
+          if (text.length > 14) {
+            alert('Максимум 14 символов для Code 128');
+            return;
+          }
+          JsBarcode(canvas, text, {
+            format: "CODE128",
+            width: 2,
+            height: 100,
+            displayValue: true
+          });
+          downloadBtn.style.display = 'block';
+        } catch (e) {
+          alert('Ошибка генерации Code 128');
         }
       } else if (type === 'datamatrix') {
         try {
