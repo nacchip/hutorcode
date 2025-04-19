@@ -57,6 +57,7 @@
     }
     canvas {
       margin-top: 1rem;
+      background: white;
     }
     #download-btn {
       display: none;
@@ -85,7 +86,7 @@
     <button id="download-btn" onclick="downloadImage()">Скачать изображение</button>
 
     <div class="result">
-      <canvas id="output"></canvas>
+      <canvas id="output" width="800" height="600"></canvas>
     </div>
   </div>
 
@@ -93,9 +94,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bwip-js/dist/bwip-js-min.js"></script>
   <script>
-    function generateCode() {
-      const type = document.getElementById('type').value;
-      const text = document.getElementById('text').value;
+    function generateCode(typeOverride = null, textOverride = null) {
+      const type = typeOverride || document.getElementById('type').value;
+      const text = textOverride || document.getElementById('text').value;
       const canvas = document.getElementById('output');
       const ctx = canvas.getContext('2d');
       const downloadBtn = document.getElementById('download-btn');
@@ -107,25 +108,22 @@
         return;
       }
 
-      downloadBtn.style.display = 'none';
+      downloadBtn.style.display = typeOverride ? 'none' : 'block';
 
       if (type === 'qrcode') {
-        QRCode.toCanvas(canvas, text, { width: 256 }, err => {
+        QRCode.toCanvas(canvas, text, { width: 600, margin: 2 }, err => {
           if (err) console.error(err);
-          downloadBtn.style.display = 'block';
+          if (!typeOverride) downloadBtn.style.display = 'block';
         });
       } else if (type === 'ean13') {
         try {
-          if (!/^[0-9]{12,13}$/.test(text)) {
-            throw new Error();
-          }
+          if (!/^[0-9]{12,13}$/.test(text)) throw new Error();
           JsBarcode(canvas, text, {
             format: "EAN13",
-            width: 2,
-            height: 100,
+            width: 4,
+            height: 200,
             displayValue: true
           });
-          downloadBtn.style.display = 'block';
         } catch (e) {
           alert('Для EAN-13 требуется 12 или 13 цифр.');
         }
@@ -137,26 +135,22 @@
           }
           JsBarcode(canvas, text, {
             format: "CODE128",
-            width: 2,
-            height: 100,
+            width: 4,
+            height: 200,
             displayValue: true
           });
-          downloadBtn.style.display = 'block';
         } catch (e) {
           alert('Ошибка генерации Code 128');
         }
       } else if (type === 'datamatrix') {
         try {
-          const bwipjs = window.bwipjs;
-          bwipjs.toCanvas(canvas, {
+          window.bwipjs.toCanvas(canvas, {
             bcid: 'datamatrix',
             text: text,
-            scale: 4,
+            scale: 8,
             includetext: false
           });
-          downloadBtn.style.display = 'block';
         } catch (e) {
-          console.error(e);
           alert('Ошибка генерации DataMatrix');
         }
       }
@@ -168,6 +162,25 @@
       link.download = 'barcode.png';
       link.href = canvas.toDataURL();
       link.click();
+    }
+
+    // Обработка параметров в URL
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      for (const [key] of params.entries()) {
+        const match = key.match(/^(QR|EAN13|CODE128|DATAMATRIX)_(.+)$/i);
+        if (match) {
+          const typeMap = {
+            QR: 'qrcode',
+            EAN13: 'ean13',
+            CODE128: 'code128',
+            DATAMATRIX: 'datamatrix'
+          };
+          const type = typeMap[match[1].toUpperCase()];
+          const value = decodeURIComponent(match[2]);
+          generateCode(type, value);
+        }
+      }
     }
   </script>
 </body>
