@@ -94,7 +94,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bwip-js/dist/bwip-js-min.js"></script>
   <script>
-    function generateCode(typeOverride = null, textOverride = null) {
+    function generateCode(typeOverride = null, textOverride = null, autoDownload = false) {
       const type = typeOverride || document.getElementById('type').value;
       const text = textOverride || document.getElementById('text').value;
       const canvas = document.getElementById('output');
@@ -110,10 +110,12 @@
 
       downloadBtn.style.display = typeOverride ? 'none' : 'block';
 
+      const doDownload = () => { if (autoDownload) downloadImage(); };
+
       if (type === 'qrcode') {
         QRCode.toCanvas(canvas, text, { width: 600, margin: 2 }, err => {
           if (err) console.error(err);
-          if (!typeOverride) downloadBtn.style.display = 'block';
+          doDownload();
         });
       } else if (type === 'ean13') {
         try {
@@ -124,6 +126,7 @@
             height: 200,
             displayValue: true
           });
+          doDownload();
         } catch (e) {
           alert('Для EAN-13 требуется 12 или 13 цифр.');
         }
@@ -139,6 +142,7 @@
             height: 200,
             displayValue: true
           });
+          doDownload();
         } catch (e) {
           alert('Ошибка генерации Code 128');
         }
@@ -150,6 +154,7 @@
             scale: 8,
             includetext: false
           });
+          doDownload();
         } catch (e) {
           alert('Ошибка генерации DataMatrix');
         }
@@ -178,7 +183,7 @@
           };
           const type = typeMap[match[1].toUpperCase()];
           const value = decodeURIComponent(match[2]);
-          generateCode(type, value);
+          generateCode(type, value, true);
         }
       }
     }
